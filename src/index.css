@@ -1,0 +1,27 @@
+html, body {
+	margin: 0;
+	padding: 0;
+	background-color: #EFEFDF;
+  font-size: 20px;
+}
+
+#main-canvas {
+  border: 2px solid #000000;
+  position: absolute;
+  top: 80px;
+  left: 30px;
+}
+
+#information {
+  position: relative;
+  top: 20px;
+}
+
+.control-button {
+  position: relative;
+  border: 1px solid #000000;
+  height: 40px;
+  width: 100px;
+  margin-left: 30px;
+  font-size: 20px;
+}
