@@ -8,5 +8,8 @@
     "start": "node server.js"
   },
   "author": "Yen-Shi Wang",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2"
+  }
 }

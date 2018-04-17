@@ -10,16 +10,19 @@
       <div id="information">
         <button id="clear-button" class="control-button">clear</button>
         <button id="undo-button" class="control-button">undo</button>
+        <button id="prev-button" class="control-button">prev</button>
         <button id="next-button" class="control-button">next</button>
-        <span style="margin-left: 30px;"> File name: </span>
-        <span id="filename"></span>
+        <span class="align-middle" style="margin-left: 30px;">File name</span>
+        <span class="align-middle" id="process"></span>
+        <span class="align-middle" id="filename"></span>
+        <div class="align-middle slider-wrap">
+          <input class="slider" id="height-slider" type="range" min="1" max="100" value="30">
+        </div>
+        <span class="align-middle" id="slider-val"></span>
       </div>
       <canvas id="main-canvas" width="300" height="300"></canvas>
     </div>
   </body>
-  <script
-  src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
-  integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
-  crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
   <script src="src/index.js"></script>
 </html>
