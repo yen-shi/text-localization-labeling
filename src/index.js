@@ -1,5 +1,4 @@
 // Ref: https://stackoverflow.com/questions/30565987/cropping-images-with-html5-canvas-in-a-non-rectangular-shape-and-transforming
-let number = 1;
 let canvas = document.getElementById('main-canvas');
 let showName = document.getElementById('filename');
 let process = document.getElementById('process');
@@ -7,6 +6,7 @@ let slider = document.getElementById("height-slider");
 let showValue = document.getElementById("slider-val");
 let context = canvas.getContext('2d');
 let boxHeight = 30;
+let number = 1;
 
 let boxes = []
 let box = []
@@ -14,159 +14,131 @@ let change = false;
 let nowX = -1, nowY = -1;
 let isDrawing = false;
 
+const start = () => {
+  // set canvas sizes equal to image size
+  canvas.width=img.width;
+  canvas.height=img.height;
+
+  // draw the example image on the source canvas
+  context.drawImage(img,0,0);
+  redraw();
+}
+
 let imgList = [];
 let nowIdx = 0;
 let img = new Image();
 img.onload = start;
-
 showValue.innerHTML = slider.value;
 
-slider.oninput = function() {
-    showValue.innerHTML = this.value;
-    boxHeight = this.value;
-    redraw();
+slider.oninput = () => {
+  showValue.innerHTML = this.value;
+  boxHeight = this.value;
+  start();
 }
 
-window.onkeyup = function(e) {
+window.onkeydown = (e) => {
   let key = e.keyCode ? e.keyCode : e.which;
-  // console.log('Get key : ', key);
+  if (key == 37)
+    boxHeight -= 1;
+  else if (key == 39)
+    boxHeight += 1;
 
-  if (key == 37) {
-      boxHeight -= 1;
-  } else if (key == 39) {
-      boxHeight += 1;
-  }
   showValue.innerHTML = boxHeight;
+  slider.value = boxHeight;
   start();
 }
 
 /////////////////////////////////// Get and Post methods /////////////////////////////////
-function getList(url) {
-  return fetch(url, {
-    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: 'same-origin', // include, same-origin, *omit
-    headers: {
-      'user-agent': 'Mozilla/4.0 MDN Example',
+class fetchObj {
+  constructor(method, body) {
+    if (body !== undefined)
+      this.body = body;
+    this.method = method; // *GET, POST, PUT, DELETE, etc.
+    this.cache = 'no-cache'; // *default, no-cache, reload, force-cache, only-if-cached
+    this.credentials = 'same-origin'; // include, same-origin, *omit
+    this.headers = {
       'content-type': 'application/json'
-    },
-    method: 'GET', // *GET, POST, PUT, DELETE, etc.
-    mode: 'cors', // no-cors, cors, *same-origin
-    redirect: 'follow', // manual, *follow, error
-    referrer: 'no-referrer', // *client, no-referrer
-  })
-  .then(response => response.json()); // parses response to JSON
+    };
+    this.mode = 'cors'; // no-cors, cors, *same-origin
+    this.redirect = 'follow'; // manual, *follow, error
+    this.referrer = 'no-referrer'; // *client, no-referrer
+  }
+}
+const getList = (url) => {
+  return fetch(url, new fetchObj('GET'))
+           .then(response => response.json()); // parses response to JSON
 }
 
-// $.ajax({
-//   type: 'POST',
-//   url: '/api/imglabel',
-//   data: { 'name': imgList[nowIdx], 'boxes': boxes },
-//   dataType: 'application/json',
-//   success: function() { console.log('Post success'); }
-// });
-
-function postLabel(url, data) {
-  // console.log('Post data: ', data);
-  return fetch(url, {
-    body: JSON.stringify(data), // must match 'Content-Type' header
-    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: 'same-origin', // include, same-origin, *omit
-    headers: {
-      'user-agent': 'Mozilla/4.0 MDN Example',
-      'content-type': 'application/json'
-    },
-    method: 'POST', // *GET, POST, PUT, DELETE, etc.
-    mode: 'cors', // no-cors, cors, *same-origin
-    redirect: 'follow', // manual, *follow, error
-    referrer: 'no-referrer', // *client, no-referrer
-  });
+const postLabel = (url, data) => {
+  return fetch(url, new fetchObj('POST', JSON.stringify(data)));
 }
 
-fetch('/api/number', {
-  cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-  credentials: 'same-origin', // include, same-origin, *omit
-  headers: {
-    'user-agent': 'Mozilla/4.0 MDN Example',
-    'content-type': 'application/json'
-  },
-  method: 'GET', // *GET, POST, PUT, DELETE, etc.
-  mode: 'cors', // no-cors, cors, *same-origin
-  redirect: 'follow', // manual, *follow, error
-  referrer: 'no-referrer', // *client, no-referrer
-})
-.then(response => response.json()) // parses response to JSON
-.then(data => { console.log('Get number: ', data); number = data; })
-.then(() => {
-  getList('/api/imglists/' + number.toString())
-  .then(data => { console.log('Get list: ', data); imgList = data; })
+// Initialize work number and initial image.
+fetch('/api/number', new fetchObj('GET'))
+  .then(response => response.json()) // parses response to JSON
+  .then(data => { console.log('Get number: ', data); number = data; })
   .then(() => {
-    postLabel('/api/imglabel', { 'name': 'init',
-                                 'boxes': [],
-                                 'next': imgList[nowIdx] })
-      .then((res) => res.json())
-      .then((res) => {
-        process.innerHTML = '(' + imgList.length.toString() + '/' + (nowIdx+1).toString() + '):';
-        console.log('Init boxes: ', res);
-        box = [];
-        boxes = res;
-        img.src=imgList[nowIdx];
-        showName.innerHTML = imgList[nowIdx];
-        redraw();
-        console.log('Complete initialization.');
-      });
+    getList('/api/imglists/' + number.toString())
+    .then(data => { console.log('Get list: ', data); imgList = data; })
+    .then(() => {
+      postLabel('/api/imglabel', { 'name': 'init',
+                                   'boxes': [],
+                                   'next': imgList[nowIdx] })
+        .then((res) => res.json())
+        .then((res) => {
+          process.innerHTML = '(' + imgList.length.toString() + '/' + (nowIdx+1).toString() + '):';
+          console.log('Init boxes: ', res);
+          box = [];
+          boxes = res;
+          img.src=imgList[nowIdx];
+          showName.innerHTML = imgList[nowIdx];
+          redraw();
+          console.log('Complete initialization.');
+        });
+    });
   });
-});
 
 /////////////////////////////////// Canvas operations //////////////////////////////////////
 // Ref: http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/
-
-$('#main-canvas').mousedown(function(e){
+$('#main-canvas').mousedown(function(e) {
   let mouseX = e.pageX - this.offsetLeft;
   let mouseY = e.pageY - this.offsetTop;
 
   addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop);
 });
 
-$('#main-canvas').mousemove(function(e){
+$('#main-canvas').mousemove(function(e) {
   nowX = e.pageX - this.offsetLeft;
   nowY = e.pageY - this.offsetTop;
   start();
 });
 
-$('#main-canvas').mouseup(function(e){
-  redraw();
-});
+$('#main-canvas').mouseup(function(e) { redraw(); });
+$('#main-canvas').mouseleave(function(e) { redraw(); });
 
-$('#main-canvas').mouseleave(function(e){
-  redraw();
-});
-
-$('#clear-button').click(function () {
+$('#clear-button').click(function() {
   box = [];
   boxes = [];
   start();
 });
 
-$('#undo-button').click(function () {
+$('#undo-button').click(function() {
   if (box.length != 0)
     box = [];
   else if (boxes.length != 0)
     boxes.pop();
-  redraw();
+  start();
 });
 
-function changeImg(nextIdx) {
+const changeImg = (nextIdx) => {
   process.innerHTML = '(' + imgList.length.toString() + '/' + (nextIdx+1).toString() + '):';
   completeBox(boxHeight)
     .then(() => {
-      console.log('post: ', boxes);
       postLabel('/api/imglabel', { 'name': imgList[nowIdx], 
                                    'boxes': boxes,
                                    'next': imgList[nextIdx] })
       .then((res) => res.json())
       .then((res) => {
-        console.log('Post return: ', res);
-        // boxes = [];
         box = [];
         boxes = res;
         nowIdx = nextIdx;
@@ -177,21 +149,13 @@ function changeImg(nextIdx) {
     });
 }
 
-$('#next-button').click(function () {
-  changeImg((nowIdx+1) % imgList.length);
-});
-
-$('#prev-button').click(function () {
-  changeImg((nowIdx-1+imgList.length) % imgList.length);
-});
+$('#next-button').click(() => changeImg((nowIdx+1) % imgList.length));
+$('#prev-button').click(() => changeImg((nowIdx-1+imgList.length) % imgList.length));
 
 /////////////////////////////////// Canvas functions //////////////////////////////////////
-function addClick(x, y)
-{
-  // console.log('Add (x, y) = (', x, ', ', y, ')');
-  if (box.length == 4) {
+const addClick = (x, y) => {
+  if (box.length == 4)
     completeBox(boxHeight);
-  }
   box.push(x);
   box.push(y);
   if (box.length == 2)
@@ -200,7 +164,7 @@ function addClick(x, y)
     isDrawing = false;
 }
 
-function completeBox(len) {
+const completeBox = (len) => {
   return new Promise((resolve, reject) => {
     if (box.length == 4) {
       let aX = box[1] - box[3];
@@ -219,7 +183,7 @@ function completeBox(len) {
   });
 }
 
-function getBox(len) {
+const getBox = (len) => {
   let aX = box[1] - box[3];
   let aY = box[2] - box[0];
   let tot = Math.pow( Math.pow(aX, 2) + Math.pow(aY, 2), 0.5);
@@ -233,18 +197,7 @@ function getBox(len) {
   return newBox;
 }
 
-function start() {
-  // set canvas sizes equal to image size
-  canvas.width=img.width;
-  canvas.height=img.height;
-
-  // draw the example image on the source canvas
-  context.drawImage(img,0,0);
-  redraw();
-}
-
-function redraw() {
-  // context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+const redraw = () => {
   context.strokeStyle = "#aa7777";
   context.lineJoin = "round";
   context.lineWidth = 2;
@@ -278,4 +231,3 @@ function redraw() {
     context.stroke();
   }
 }
-
