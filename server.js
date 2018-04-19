@@ -5,7 +5,7 @@ const http = require('http').Server(app);
 const bodyParser = require('body-parser')
 const readline = require('readline');
 
-let number = 1, tot = 3;
+let number = 1, tot = 4;
 
 // parse application/json
 app.use(bodyParser.json());
@@ -65,10 +65,11 @@ const readLabel = (name) => {
     if (fs.existsSync(dest)) {
       fs.readFile(dest, 'utf8', function(err, data) {
         let lines = data.split('\n');
+        console.log(lines);
         lines.forEach((line) => {
           let box = [];
           let ls = line.split(',');
-          if (ls.length == 9) {
+          if (ls.length >= 8 && ls.length <= 12) {
             for(let i = 0; i < 8; i++)
               box.push(parseInt(ls[i]));
             boxes.push(box);
