@@ -156,6 +156,8 @@ $('#prev-button').click(() => changeImg((nowIdx-1+imgList.length) % imgList.leng
 const addClick = (x, y) => {
   if (box.length == 4)
     completeBox(boxHeight);
+  x = x < 0 ? 0 : x;
+  y = y < 0 ? 0 : y;
   box.push(x);
   box.push(y);
   if (box.length == 2)

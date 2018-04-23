@@ -65,7 +65,7 @@ const readLabel = (name) => {
     if (fs.existsSync(dest)) {
       fs.readFile(dest, 'utf8', function(err, data) {
         let lines = data.split('\n');
-        console.log(lines);
+        // console.log(lines);
         lines.forEach((line) => {
           let box = [];
           let ls = line.split(',');
@@ -88,9 +88,13 @@ function writeLabel(name, boxes) {
     let output = '';
     let dest = getLabelDest(name);
     for(let i = 0; i < boxes.length; i++) {
-      for(let j = 0; j < boxes[i].length; j++)
-        output += boxes[i][j].toString() + ',';
-      output += '###\n';
+      for(let j = 0; j < boxes[i].length; j++) {
+        if (boxes[i][j] < 0)
+          output += '0,';
+        else
+          output += boxes[i][j].toString() + ',';
+      }
+      output += '-\n';
     }
     fs.writeFile(dest, output, (err) => {
       if (err) throw err;
