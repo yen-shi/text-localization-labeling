@@ -5,7 +5,7 @@ const http = require('http').Server(app);
 const bodyParser = require('body-parser')
 const readline = require('readline');
 
-let number = 1, tot = 4;
+let number = 1, tot = 5;
 
 // parse application/json
 app.use(bodyParser.json());
@@ -61,6 +61,7 @@ const getLabelDest = (name) => {
 const readLabel = (name) => {
   return new Promise((resolve, reject) => {
     let boxes = [];
+    let labels = [];
     let dest = getLabelDest(name);
     if (fs.existsSync(dest)) {
       fs.readFile(dest, 'utf8', function(err, data) {
@@ -73,17 +74,18 @@ const readLabel = (name) => {
             for(let i = 0; i < 8; i++)
               box.push(parseInt(ls[i]));
             boxes.push(box);
+            labels.push(ls[8]);
           }
         });
         console.log('Boxes read from: ', dest);
-        resolve(boxes);
+        resolve({'boxes': boxes, 'labels': labels});
       });
     }
-    else resolve(boxes);
+    else resolve({'boxes': boxes, 'labels': labels});
   });
 }
 
-function writeLabel(name, boxes) {
+function writeLabel(name, boxes, labels) {
   return new Promise((resolve, reject) => {
     let output = '';
     let dest = getLabelDest(name);
@@ -94,7 +96,10 @@ function writeLabel(name, boxes) {
         else
           output += boxes[i][j].toString() + ',';
       }
-      output += '-\n';
+      if (labels[i])
+        output += labels[i] + '\n';
+      else
+        output += 'Empty\n';
     }
     fs.writeFile(dest, output, (err) => {
       if (err) throw err;
@@ -104,11 +109,11 @@ function writeLabel(name, boxes) {
 }
 
 app.post('/api/imglabel', function(req, res) {
-  const { name, boxes, next } = req.body;
+  const { name, boxes, labels, next } = req.body;
   console.log('Get name: ', name);
   console.log('Get next: ', next);
   if (name != 'init') {
-    writeLabel(name, boxes)
+    writeLabel(name, boxes, labels)
       .then((dest) => console.log('Result is written to ', dest));
   }
   readLabel(next)

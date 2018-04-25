@@ -4,11 +4,13 @@ let showName = document.getElementById('filename');
 let process = document.getElementById('process');
 let slider = document.getElementById("height-slider");
 let showValue = document.getElementById("slider-val");
+let boxContent = document.getElementById("box-content");
 let context = canvas.getContext('2d');
 let boxHeight = 30;
 let number = 1;
 
 let boxes = []
+let labels = []
 let box = []
 let change = false;
 let nowX = -1, nowY = -1;
@@ -83,16 +85,19 @@ fetch('/api/number', new fetchObj('GET'))
     .then(() => {
       postLabel('/api/imglabel', { 'name': 'init',
                                    'boxes': [],
+                                   'labels': [],
                                    'next': imgList[nowIdx] })
         .then((res) => res.json())
         .then((res) => {
           process.innerHTML = '(' + imgList.length.toString() + '/' + (nowIdx+1).toString() + '):';
           console.log('Init boxes: ', res);
           box = [];
-          boxes = res;
+          boxes = res['boxes'];
+          labels = res['labels'];
+          initBoxLabels();
           img.src=imgList[nowIdx];
           showName.innerHTML = imgList[nowIdx];
-          redraw();
+          start();
           console.log('Complete initialization.');
         });
     });
@@ -127,6 +132,10 @@ $('#undo-button').click(function() {
     box = [];
   else if (boxes.length != 0)
     boxes.pop();
+  if (boxes.length != labels.length) {
+    labels.pop();
+    popBoxLabel();
+  }
   start();
 });
 
@@ -136,11 +145,14 @@ const changeImg = (nextIdx) => {
     .then(() => {
       postLabel('/api/imglabel', { 'name': imgList[nowIdx], 
                                    'boxes': boxes,
+                                   'labels': labels,
                                    'next': imgList[nextIdx] })
       .then((res) => res.json())
       .then((res) => {
         box = [];
-        boxes = res;
+        boxes = res['boxes'];
+        labels = res['labels'];
+        initBoxLabels();
         nowIdx = nextIdx;
         img.src = imgList[nowIdx];
         showName.innerHTML = imgList[nowIdx];
@@ -164,6 +176,12 @@ const addClick = (x, y) => {
     isDrawing = true;
   else
     isDrawing = false;
+  if (box.length == 4) {
+    console.log('newBoxLabel');
+    console.log(labels);
+    newBoxLabel(boxes.length+1, '---');
+    labels.push('---');
+  }
 }
 
 const completeBox = (len) => {
@@ -185,6 +203,40 @@ const completeBox = (len) => {
   });
 }
 
+const changeLabel = (number) => {
+  let value = document.getElementById(`box${ number }`).value;
+  labels[number-1] = value;
+  // console.log('changeLabel ', number);
+  // console.log('value', value);
+}
+
+const initBoxLabels = () => {
+  boxContent.innerHTML = '';
+  for(let i = 0; i < labels.length; i++)
+    newBoxLabel(i+1, labels[i]);
+}
+
+const createElementFromHTML = (htmlString) => {
+  let div = document.createElement('div');
+  div.innerHTML = htmlString.trim();
+
+  // Change this to div.childNodes to support multiple top-level nodes
+  return div.firstChild;
+}
+
+const newBoxLabel = (number, content) => {
+  boxContent.appendChild(createElementFromHTML(
+    `<div class="box-wrapper">
+       <span class="box-name">${ number }</span>
+       <input class="box" type="text" oninput=changeLabel(${ number })
+              id="box${ number }" name="box${ number }" value="${content}">
+     </div>`));
+}
+
+const popBoxLabel = () => {
+  boxContent.removeChild(boxContent.lastChild);
+}
+
 const getBox = (len) => {
   let aX = box[1] - box[3];
   let aY = box[2] - box[0];
@@ -203,6 +255,8 @@ const redraw = () => {
   context.strokeStyle = "#aa7777";
   context.lineJoin = "round";
   context.lineWidth = 2;
+  context.fillStyle = "red";
+  context.font = "12px Comic Sans MS";
 
   if (box.length == 2) {
     context.beginPath();
@@ -219,6 +273,7 @@ const redraw = () => {
       context.lineTo(tmp[j], tmp[j+1]);
     context.closePath();
     context.stroke();
+    context.fillText((boxes.length + 1).toString(), tmp[0], tmp[1]-4);
   }
 
   context.strokeStyle = "#df4b26";
@@ -231,5 +286,6 @@ const redraw = () => {
       context.lineTo(boxes[i][j], boxes[i][j+1]);
     context.closePath();
     context.stroke();
+    context.fillText((i + 1).toString(), boxes[i][0], boxes[i][1]-4);
   }
 }

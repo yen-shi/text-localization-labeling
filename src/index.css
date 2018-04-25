@@ -18,6 +18,33 @@ html, body {
   top: 50px;
 }
 
+#box-content {
+  font-size: 25px;
+  position: absolute;
+  top: 90px;
+  left: 0px;
+  padding: 0 40px;
+  width: 13%;
+}
+
+input[type=text], select {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.box-name {
+  width: 25%;
+}
+
+.box {
+  font-size: 25px;
+  display: inline-block;
+  width: 75%;
+  margin: 5px 0px 0px 10px;
+  height: 35px;
+}
+
 #information {
   position: relative;
   top: 20px;
