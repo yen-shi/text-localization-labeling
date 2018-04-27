@@ -1,3 +1,3 @@
-# Simple Web Tools for Image Localization Labeling
+# Simple Web Tool for Image Localization Task Labeling
 
 - Use Node.js -> run `npm install` and `node server.js` to start!
