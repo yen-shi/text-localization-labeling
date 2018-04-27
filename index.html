@@ -10,6 +10,7 @@
       <div id="information">
         <button id="clear-button" class="control-button">clear</button>
         <button id="undo-button" class="control-button">undo</button>
+        <button id="rotate-button" class="control-button">rotate</button>
         <button id="prev-button" class="control-button">prev</button>
         <button id="next-button" class="control-button">next</button>
         <span class="align-middle" style="margin-left: 30px;">File name</span>
@@ -22,7 +23,30 @@
       </div>
       <div id="box-content">
       </div>
-      <canvas id="main-canvas" width="300" height="300"></canvas>
+      <div id="init-form">
+        <form action="javascript:void(0);" onsubmit="getInitFrom(this);">
+          <div class="row">
+            <div class="col-25">
+              <label for="work-number">Work number</label>
+            </div>
+            <div class="col-75">
+              <input type="text" class="init-input" id="work-number" name="work-number" placeholder="Ex. 1">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-25">
+              <label for="image-index">Image index</label>
+            </div>
+            <div class="col-75">
+              <input type="text" class="init-input" id="image-index" name="image-index" placeholder="Index of image, ex. 23">
+            </div>
+          </div>
+          <div class="row">
+            <input id="submit-button" type="submit" value="Submit">
+          </div>
+        </form>
+      </div>
+      <canvas id="main-canvas" width="300" height="300" style="display: none;"></canvas>
     </div>
   </body>
   <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>

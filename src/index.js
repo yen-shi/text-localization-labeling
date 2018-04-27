@@ -15,6 +15,17 @@ let box = []
 let change = false;
 let nowX = -1, nowY = -1;
 let isDrawing = false;
+let rotateDegree = 0;
+
+const getOffset = (e) => {
+  let { left, right, top, bottom } = canvas.getBoundingClientRect();
+  left   += window.scrollX;
+  right  += window.scrollX;
+  top    += window.scrollY;
+  bottom += window.scrollY;
+  let values = [e.pageX - left, e.pageY - top, right - e.pageX, bottom - e.pageY];
+  return [values[(rotateDegree / 90) % 4], values[(rotateDegree / 90 + 1) % 4]];
+}
 
 const start = () => {
   // set canvas sizes equal to image size
@@ -33,8 +44,8 @@ img.onload = start;
 showValue.innerHTML = slider.value;
 
 slider.oninput = () => {
-  showValue.innerHTML = this.value;
-  boxHeight = this.value;
+  showValue.innerHTML = slider.value;
+  boxHeight = slider.value;
   start();
 }
 
@@ -66,55 +77,69 @@ class fetchObj {
     this.referrer = 'no-referrer'; // *client, no-referrer
   }
 }
-const getList = (url) => {
-  return fetch(url, new fetchObj('GET'))
-           .then(response => response.json()); // parses response to JSON
+
+const getUrl = (url, data) => {
+  return fetch(url, new fetchObj('GET'));
 }
 
-const postLabel = (url, data) => {
-  return fetch(url, new fetchObj('POST', JSON.stringify(data)));
+const putUrl = (url, data) => {
+  return fetch(url, new fetchObj('PUT', JSON.stringify(data)));
 }
 
-// Initialize work number and initial image.
-fetch('/api/number', new fetchObj('GET'))
-  .then(response => response.json()) // parses response to JSON
-  .then(data => { console.log('Get number: ', data); number = data; })
-  .then(() => {
-    getList('/api/imglists/' + number.toString())
-    .then(data => { console.log('Get list: ', data); imgList = data; })
+const getAndSet = (url) => {
+  return getUrl(url)
+           .then((res) => res.json())
+           .then((res) => {
+              process.innerHTML = '(' + imgList.length.toString() + '/' + (nowIdx+1).toString() + '):';
+              box = [];
+              boxes = res['boxes'];
+              labels = res['labels'];
+              initBoxLabels();
+              img.src=imgList[nowIdx];
+              showName.innerHTML = imgList[nowIdx];
+              start();
+           });
+}
+
+const changeImg = (nextIdx) => {
+  completeBox(boxHeight)
     .then(() => {
-      postLabel('/api/imglabel', { 'name': 'init',
-                                   'boxes': [],
-                                   'labels': [],
-                                   'next': imgList[nowIdx] })
-        .then((res) => res.json())
-        .then((res) => {
-          process.innerHTML = '(' + imgList.length.toString() + '/' + (nowIdx+1).toString() + '):';
-          console.log('Init boxes: ', res);
-          box = [];
-          boxes = res['boxes'];
-          labels = res['labels'];
-          initBoxLabels();
-          img.src=imgList[nowIdx];
-          showName.innerHTML = imgList[nowIdx];
-          start();
-          console.log('Complete initialization.');
+      putUrl('/api/imglabel', { 'name': imgList[nowIdx], 
+                                'boxes': boxes,
+                                'labels': labels })
+        .then((res) =>  {
+          nowIdx = nextIdx;
+          getAndSet('/api/imglabel?name=' + imgList[nextIdx]);
         });
     });
-  });
+}
+
+const initForm = document.getElementById('init-form');
+const getInitFrom = (form) => {
+  workNumber = form.elements['work-number'].value;
+  imageIndex = form.elements['image-index'].value;
+  nowIdx = parseInt(imageIndex) - 1;
+  initForm.style.display = 'none';
+  canvas.style.display = 'block';
+  getUrl('/api/imglists/' + workNumber)
+    .then((res) => res.json())
+    .then(data => { console.log('Get list: ', data); imgList = data; })
+    .then(() => {
+      if (imgList.length > nowIdx && nowIdx >= 0)
+        getAndSet('/api/imglabel?name=' + imgList[nowIdx]);
+      else console.error('NowIdx is not valid.');
+    });
+}
 
 /////////////////////////////////// Canvas operations //////////////////////////////////////
 // Ref: http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/
 $('#main-canvas').mousedown(function(e) {
-  let mouseX = e.pageX - this.offsetLeft;
-  let mouseY = e.pageY - this.offsetTop;
-
-  addClick(e.pageX - this.offsetLeft, e.pageY - this.offsetTop);
+  let offsets = getOffset(e);
+  addClick(offsets[0], offsets[1]);
 });
 
 $('#main-canvas').mousemove(function(e) {
-  nowX = e.pageX - this.offsetLeft;
-  nowY = e.pageY - this.offsetTop;
+  [nowX, nowY] = getOffset(e);
   start();
 });
 
@@ -124,6 +149,7 @@ $('#main-canvas').mouseleave(function(e) { redraw(); });
 $('#clear-button').click(function() {
   box = [];
   boxes = [];
+  boxContent.innerHTML = '';
   start();
 });
 
@@ -139,30 +165,17 @@ $('#undo-button').click(function() {
   start();
 });
 
-const changeImg = (nextIdx) => {
-  process.innerHTML = '(' + imgList.length.toString() + '/' + (nextIdx+1).toString() + '):';
-  completeBox(boxHeight)
-    .then(() => {
-      postLabel('/api/imglabel', { 'name': imgList[nowIdx], 
-                                   'boxes': boxes,
-                                   'labels': labels,
-                                   'next': imgList[nextIdx] })
-      .then((res) => res.json())
-      .then((res) => {
-        box = [];
-        boxes = res['boxes'];
-        labels = res['labels'];
-        initBoxLabels();
-        nowIdx = nextIdx;
-        img.src = imgList[nowIdx];
-        showName.innerHTML = imgList[nowIdx];
-        redraw();
-      });
-    });
-}
-
 $('#next-button').click(() => changeImg((nowIdx+1) % imgList.length));
 $('#prev-button').click(() => changeImg((nowIdx-1+imgList.length) % imgList.length));
+
+$('#rotate-button').click(() => {
+  rotateDegree = (rotateDegree + 90) % 360;
+  canvas.style.webkitTransform = `rotate(${rotateDegree}deg)`;
+  canvas.style.mozTransform    = `rotate(${rotateDegree}deg)`;
+  canvas.style.msTransform     = `rotate(${rotateDegree}deg)`;
+  canvas.style.oTransform      = `rotate(${rotateDegree}deg)`;
+  canvas.style.transform       = `rotate(${rotateDegree}deg)`;
+});
 
 /////////////////////////////////// Canvas functions //////////////////////////////////////
 const addClick = (x, y) => {
@@ -177,8 +190,6 @@ const addClick = (x, y) => {
   else
     isDrawing = false;
   if (box.length == 4) {
-    console.log('newBoxLabel');
-    console.log(labels);
     newBoxLabel(boxes.length+1, '---');
     labels.push('---');
   }
@@ -206,8 +217,6 @@ const completeBox = (len) => {
 const changeLabel = (number) => {
   let value = document.getElementById(`box${ number }`).value;
   labels[number-1] = value;
-  // console.log('changeLabel ', number);
-  // console.log('value', value);
 }
 
 const initBoxLabels = () => {

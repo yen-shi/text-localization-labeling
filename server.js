@@ -5,8 +5,6 @@ const http = require('http').Server(app);
 const bodyParser = require('body-parser')
 const readline = require('readline');
 
-let number = 1, tot = 5;
-
 // parse application/json
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -16,12 +14,6 @@ app.use('/cases', express.static(__dirname + '/cases'));
 
 app.get('/', function(req, res) {
   res.sendFile(__dirname + '/index.html');
-});
-
-// assign work number
-app.get('/api/number', function(req, res) {
-  res.json(number);
-  number = (number % tot) + 1;
 });
 
 // send images list
@@ -46,6 +38,31 @@ app.get('/api/imglists/:number', function(req, res) {
     res.send('URL is in wrong format!');
   }
 });
+
+// get image
+app.get('/api/imglabel', function(req, res) {
+  const name = req.query.name;
+  console.log('Get name: ', name);
+  readLabel(name)
+    .then((ret) => res.json(ret));
+});
+
+// put image
+app.put('/api/imglabel', function(req, res) {
+  const { name, boxes, labels } = req.body;
+  console.log('Put name: ', name);
+  writeLabel(name, boxes, labels)
+    .then((dest) => console.log('Result is written to ', dest))
+    .then(() => res.send('The result has been saved.'));
+});
+
+http.listen(3000, function(){
+  console.log('Listen on localhost:3000');
+});
+
+/****************************************************************************
+ * Useful functions
+ * *************************************************************************/
 
 const getLabelDest = (name) => {
   let ss = name.split('/');
@@ -85,7 +102,7 @@ const readLabel = (name) => {
   });
 }
 
-function writeLabel(name, boxes, labels) {
+const writeLabel = (name, boxes, labels) => {
   return new Promise((resolve, reject) => {
     let output = '';
     let dest = getLabelDest(name);
@@ -107,20 +124,3 @@ function writeLabel(name, boxes, labels) {
     });
   });
 }
-
-app.post('/api/imglabel', function(req, res) {
-  const { name, boxes, labels, next } = req.body;
-  console.log('Get name: ', name);
-  console.log('Get next: ', next);
-  if (name != 'init') {
-    writeLabel(name, boxes, labels)
-      .then((dest) => console.log('Result is written to ', dest));
-  }
-  readLabel(next)
-    .then((ret) => res.json(ret));
-});
-
-http.listen(3000, function(){
-  console.log('Listen on localhost:3000');
-});
-
