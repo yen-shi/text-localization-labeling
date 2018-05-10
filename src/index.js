@@ -172,9 +172,14 @@ const toggleDontCare = () => {
   }
   console.log(labels);
 }
+
 const changeLabel = (number) => {
   let value = document.getElementById(`box${ number }`).value;
   labels[number-1] = value;
+}
+
+const removeLabel = (number) => {
+  console.log(number);
 }
 
 const initBoxLabels = () => {
@@ -193,7 +198,7 @@ const createElementFromHTML = (htmlString) => {
 
 const newBoxLabel = (number, content) => {
   let newBox = createElementFromHTML(
-   `<li class="box">
+   `<li class="box" onclick=removeLabel(${number})>
       <a href="#" class="tag" id="box${ number }">
         ${ number }
       </a>
