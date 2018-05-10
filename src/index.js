@@ -99,11 +99,13 @@ const changeImg = (nextIdx) => {
 }
 
 const initForm = document.getElementById('init-form');
+const menuscript = document.getElementById('menuscript');
 const getInitFrom = (form) => {
   workNumber = form.elements['work-number'].value;
   if (Number.isInteger(parseInt(workNumber))) {
     initForm.style.display = 'none';
     canvas.style.display = 'block';
+    menuscript.style.display = 'block';
     getUrl('/api/imglists/' + workNumber)
       .then((res) => res.json())
       .then(data => {
@@ -170,7 +172,6 @@ const toggleDontCare = () => {
     labels[labels.length-1] = '###';
     $('#' + idName).addClass('dont-care');
   }
-  console.log(labels);
 }
 
 const changeLabel = (number) => {
@@ -178,14 +179,22 @@ const changeLabel = (number) => {
   labels[number-1] = value;
 }
 
-const removeLabel = (number) => {
-  console.log(number);
-}
-
 const initBoxLabels = () => {
   boxContent.innerHTML = '';
-  for(let i = 0; i < labels.length; i++)
+  for(let i = 0; i < boxes.length; i++)
     newBoxLabel(i+1, labels[i]);
+}
+
+const removeLabel = (target, number) => {
+  boxContent.removeChild(target);
+  labels.splice(number-1, 1);
+  if (number <= boxes.length)
+    boxes.splice(number-1, 1);
+  else
+    box = [];
+  boxContent.innerHTML = '';
+  initBoxLabels();
+  start();
 }
 
 const createElementFromHTML = (htmlString) => {
@@ -198,7 +207,7 @@ const createElementFromHTML = (htmlString) => {
 
 const newBoxLabel = (number, content) => {
   let newBox = createElementFromHTML(
-   `<li class="box" onclick=removeLabel(${number})>
+   `<li class="box" onclick="removeLabel(this, ${ number })")>
       <a href="#" class="tag" id="box${ number }">
         ${ number }
       </a>
@@ -207,6 +216,8 @@ const newBoxLabel = (number, content) => {
     boxContent.insertBefore(newBox, boxContent.children[0]);
   else
     boxContent.appendChild(newBox);
+  if (content == '###')
+    $('#' + `box${ number }`).addClass('dont-care');
 }
 
 const popBoxLabel = () => {
