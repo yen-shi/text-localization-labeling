@@ -21,8 +21,6 @@
         </div>
         <span class="align-middle" id="slider-val"></span>
       </div>
-      <div id="box-content">
-      </div>
       <div id="init-form">
         <form action="javascript:void(0);" onsubmit="getInitFrom(this);">
           <div class="row">
@@ -34,19 +32,17 @@
             </div>
           </div>
           <div class="row">
-            <div class="col-25">
-              <label for="image-index">Image index</label>
-            </div>
-            <div class="col-75">
-              <input type="text" class="init-input" id="image-index" name="image-index" placeholder="Index of image, ex. 23">
-            </div>
-          </div>
-          <div class="row">
             <input id="submit-button" type="submit" value="Submit">
           </div>
         </form>
       </div>
-      <canvas id="main-canvas" width="300" height="300" style="display: none;"></canvas>
+      <div class="left-panel">
+        <ul id="box-content">
+        </ul>
+      </div>
+      <div class="main-panel">
+        <canvas id="main-canvas" width="300" height="300" style="display: none;"></canvas>
+      </div>
     </div>
   </body>
   <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>

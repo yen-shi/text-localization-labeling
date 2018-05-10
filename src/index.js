@@ -7,7 +7,7 @@ let showValue = document.getElementById("slider-val");
 let boxContent = document.getElementById("box-content");
 let context = canvas.getContext('2d');
 let boxHeight = 30;
-let number = 1;
+let workNumber = 0;
 
 let boxes = []
 let labels = []
@@ -42,24 +42,6 @@ let nowIdx = 0;
 let img = new Image();
 img.onload = start;
 showValue.innerHTML = slider.value;
-
-slider.oninput = () => {
-  showValue.innerHTML = slider.value;
-  boxHeight = slider.value;
-  start();
-}
-
-window.onkeydown = (e) => {
-  let key = e.keyCode ? e.keyCode : e.which;
-  if (key == 37)
-    boxHeight -= 1;
-  else if (key == 39)
-    boxHeight += 1;
-
-  showValue.innerHTML = boxHeight;
-  slider.value = boxHeight;
-  start();
-}
 
 /////////////////////////////////// Get and Post methods /////////////////////////////////
 class fetchObj {
@@ -105,6 +87,8 @@ const changeImg = (nextIdx) => {
   completeBox(boxHeight)
     .then(() => {
       putUrl('/api/imglabel', { 'name': imgList[nowIdx], 
+                                'workNumber': workNumber,
+                                'current': nextIdx,
                                 'boxes': boxes,
                                 'labels': labels })
         .then((res) =>  {
@@ -117,65 +101,26 @@ const changeImg = (nextIdx) => {
 const initForm = document.getElementById('init-form');
 const getInitFrom = (form) => {
   workNumber = form.elements['work-number'].value;
-  imageIndex = form.elements['image-index'].value;
-  nowIdx = parseInt(imageIndex) - 1;
-  initForm.style.display = 'none';
-  canvas.style.display = 'block';
-  getUrl('/api/imglists/' + workNumber)
-    .then((res) => res.json())
-    .then(data => { console.log('Get list: ', data); imgList = data; })
-    .then(() => {
-      if (imgList.length > nowIdx && nowIdx >= 0)
-        getAndSet('/api/imglabel?name=' + imgList[nowIdx]);
-      else console.error('NowIdx is not valid.');
-    });
-}
-
-/////////////////////////////////// Canvas operations //////////////////////////////////////
-// Ref: http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/
-$('#main-canvas').mousedown(function(e) {
-  let offsets = getOffset(e);
-  addClick(offsets[0], offsets[1]);
-});
-
-$('#main-canvas').mousemove(function(e) {
-  [nowX, nowY] = getOffset(e);
-  start();
-});
-
-$('#main-canvas').mouseup(function(e) { redraw(); });
-$('#main-canvas').mouseleave(function(e) { redraw(); });
-
-$('#clear-button').click(function() {
-  box = [];
-  boxes = [];
-  boxContent.innerHTML = '';
-  start();
-});
-
-$('#undo-button').click(function() {
-  if (box.length != 0)
-    box = [];
-  else if (boxes.length != 0)
-    boxes.pop();
-  if (boxes.length != labels.length) {
-    labels.pop();
-    popBoxLabel();
+  if (Number.isInteger(parseInt(workNumber))) {
+    initForm.style.display = 'none';
+    canvas.style.display = 'block';
+    getUrl('/api/imglists/' + workNumber)
+      .then((res) => res.json())
+      .then(data => {
+        console.log('Get list: ', data);
+        imgList = data['imgnames'];
+        nowIdx = data['current'];
+      })
+      .then(() => {
+        if (imgList.length > nowIdx && nowIdx >= 0)
+          getAndSet('/api/imglabel?name=' + imgList[nowIdx]);
+        else console.error('NowIdx is not valid.');
+      });
   }
-  start();
-});
-
-$('#next-button').click(() => changeImg((nowIdx+1) % imgList.length));
-$('#prev-button').click(() => changeImg((nowIdx-1+imgList.length) % imgList.length));
-
-$('#rotate-button').click(() => {
-  rotateDegree = (rotateDegree + 90) % 360;
-  canvas.style.webkitTransform = `rotate(${rotateDegree}deg)`;
-  canvas.style.mozTransform    = `rotate(${rotateDegree}deg)`;
-  canvas.style.msTransform     = `rotate(${rotateDegree}deg)`;
-  canvas.style.oTransform      = `rotate(${rotateDegree}deg)`;
-  canvas.style.transform       = `rotate(${rotateDegree}deg)`;
-});
+  else {
+    alert("Please type in valid working number!");
+  }
+}
 
 /////////////////////////////////// Canvas functions //////////////////////////////////////
 const addClick = (x, y) => {
@@ -214,6 +159,19 @@ const completeBox = (len) => {
   });
 }
 
+const toggleDontCare = () => {
+  let idName = `box${ labels.length }`
+  let target = document.getElementById(idName);
+  if (target.classList.contains('dont-care')) {
+    labels[labels.length-1] = '---';
+    $('#' + idName).removeClass('dont-care');
+  }
+  else {
+    labels[labels.length-1] = '###';
+    $('#' + idName).addClass('dont-care');
+  }
+  console.log(labels);
+}
 const changeLabel = (number) => {
   let value = document.getElementById(`box${ number }`).value;
   labels[number-1] = value;
@@ -234,16 +192,20 @@ const createElementFromHTML = (htmlString) => {
 }
 
 const newBoxLabel = (number, content) => {
-  boxContent.appendChild(createElementFromHTML(
-    `<div class="box-wrapper">
-       <span class="box-name">${ number }</span>
-       <input class="box" type="text" oninput=changeLabel(${ number })
-              id="box${ number }" name="box${ number }" value="${content}">
-     </div>`));
+  let newBox = createElementFromHTML(
+   `<li class="box">
+      <a href="#" class="tag" id="box${ number }">
+        ${ number }
+      </a>
+    </li>`);
+  if (boxContent.childElementCount >= 1)
+    boxContent.insertBefore(newBox, boxContent.children[0]);
+  else
+    boxContent.appendChild(newBox);
 }
 
 const popBoxLabel = () => {
-  boxContent.removeChild(boxContent.lastChild);
+  boxContent.removeChild(boxContent.firstChild);
 }
 
 const getBox = (len) => {
@@ -258,6 +220,25 @@ const getBox = (len) => {
   newBox.push(box[0] + aX);
   newBox.push(box[1] + aY);
   return newBox;
+}
+
+const undoBox = () => {
+  if (box.length != 0)
+    box = [];
+  else if (boxes.length != 0)
+    boxes.pop(); // pop back
+  if (boxes.length != labels.length) {
+    labels.pop(); // pop back
+    popBoxLabel(); // remove first !
+  }
+  start();
+}
+
+const clearBox = () => {
+  box = [];
+  boxes = [];
+  boxContent.innerHTML = '';
+  start();
 }
 
 const redraw = () => {
@@ -297,4 +278,57 @@ const redraw = () => {
     context.stroke();
     context.fillText((i + 1).toString(), boxes[i][0], boxes[i][1]-4);
   }
+}
+
+/////////////////////////////////// Canvas operations //////////////////////////////////////
+// Ref: http://www.williammalone.com/articles/create-html5-canvas-javascript-drawing-app/
+$('#main-canvas').mousedown(function(e) {
+  let offsets = getOffset(e);
+  addClick(offsets[0], offsets[1]);
+});
+
+$('#main-canvas').mousemove(function(e) {
+  [nowX, nowY] = getOffset(e);
+  start();
+});
+
+$('#main-canvas').mouseup(function(e) { redraw(); });
+$('#main-canvas').mouseleave(function(e) { redraw(); });
+
+$('#undo-button').click(undoBox);
+$('#clear-button').click(clearBox);
+
+$('#next-button').click(() => changeImg((nowIdx+1) % imgList.length));
+$('#prev-button').click(() => changeImg((nowIdx-1+imgList.length) % imgList.length));
+
+$('#rotate-button').click(() => {
+  rotateDegree = (rotateDegree + 90) % 360;
+  canvas.style.webkitTransform = `rotate(${rotateDegree}deg)`;
+  canvas.style.mozTransform    = `rotate(${rotateDegree}deg)`;
+  canvas.style.msTransform     = `rotate(${rotateDegree}deg)`;
+  canvas.style.oTransform      = `rotate(${rotateDegree}deg)`;
+  canvas.style.transform       = `rotate(${rotateDegree}deg)`;
+});
+
+/////////////////////////////////// Window functions /////////////////////////////////
+slider.oninput = () => {
+  showValue.innerHTML = slider.value;
+  boxHeight = slider.value;
+  start();
+}
+
+window.onkeydown = (e) => {
+  let key = e.keyCode ? e.keyCode : e.which;
+  if (key == 37 || key == 67) // '<-' or 'C'
+    boxHeight -= 1;
+  else if (key == 39 || key == 86) // '->' or 'V'
+    boxHeight += 1;
+  else if (key == 90) // 'Z'
+    undoBox();
+  else if (key == 88) // 'X'
+    toggleDontCare();
+
+  showValue.innerHTML = boxHeight;
+  slider.value = boxHeight;
+  start();
 }

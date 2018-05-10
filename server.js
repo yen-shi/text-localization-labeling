@@ -20,12 +20,22 @@ app.get('/', function(req, res) {
 app.get('/api/imglists/:number', function(req, res) {
   console.log('Get: ', req.params);
   if (!isNaN(parseInt(req.params.number))) {
-    let target_dir = 'cases/' + parseInt(req.params.number).toString() + '/';
+    let cur_working_dir = 'cases/' + parseInt(req.params.number).toString();
+    let target_dir = cur_working_dir+ '/';
+    let cur_index_file = cur_working_dir + '.txt';
+    let content = undefined
+    if (fs.existsSync(cur_index_file))
+      content = fs.readFileSync(cur_index_file, 'utf8');
     if (fs.existsSync(target_dir)) {
       fs.readdir(target_dir, (err, files) => {
+        if (files.length == 0) {
+          console.log('Work dir is empty!');
+          res.send('Work dir is empty!');
+        }
         for(let i = 0; i < files.length; i++)
           files[i] = target_dir + files[i];
-        res.json(files);
+        content = (content === undefined) ? 0 : parseInt(content);
+        res.json({ 'imgnames': files, 'current': content });
       });
     }
     else {
@@ -49,9 +59,9 @@ app.get('/api/imglabel', function(req, res) {
 
 // put image
 app.put('/api/imglabel', function(req, res) {
-  const { name, boxes, labels } = req.body;
+  const { name, workNumber, current, boxes, labels } = req.body;
   console.log('Put name: ', name);
-  writeLabel(name, boxes, labels)
+  writeLabel(name, workNumber, current, boxes, labels)
     .then((dest) => console.log('Result is written to ', dest))
     .then(() => res.send('The result has been saved.'));
 });
@@ -102,10 +112,17 @@ const readLabel = (name) => {
   });
 }
 
-const writeLabel = (name, boxes, labels) => {
+const writeLabel = (name, workNumber, current, boxes, labels) => {
   return new Promise((resolve, reject) => {
+    workNumber = parseInt(workNumber);
     let output = '';
     let dest = getLabelDest(name);
+    let cur_index_file = 'cases/' + workNumber.toString() + '.txt';
+    let content = undefined
+    if (Number.isInteger(workNumber))
+      content = fs.writeFileSync(cur_index_file, current, { 'encoding' : 'utf8' });
+    else
+      console.log('Get wrong workNumber/current.');
     for(let i = 0; i < boxes.length; i++) {
       for(let j = 0; j < boxes[i].length; j++) {
         if (boxes[i][j] < 0)
