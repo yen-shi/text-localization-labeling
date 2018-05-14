@@ -183,6 +183,9 @@ const initBoxLabels = () => {
   boxContent.innerHTML = '';
   for(let i = 0; i < boxes.length; i++)
     newBoxLabel(i+1, labels[i]);
+  if (box.length > 0) {
+    newBoxLabel(boxes.length+1, labels[box.length]);
+  }
 }
 
 const removeLabel = (target, number) => {
@@ -339,6 +342,8 @@ window.onkeydown = (e) => {
     boxHeight -= 1;
   else if (key == 39 || key == 86) // '->' or 'V'
     boxHeight += 1;
+  else if (key == 66) // 'B'
+    boxHeight = 30;
   else if (key == 90) // 'Z'
     undoBox();
   else if (key == 88) // 'X'
