@@ -102,11 +102,13 @@ const initForm = document.getElementById('init-form');
 const menuscript = document.getElementById('menuscript');
 const getInitFrom = (form) => {
   workNumber = form.elements['work-number'].value;
-  if (Number.isInteger(parseInt(workNumber))) {
+  let currentIndex = form.elements['current-index'].value;
+  if (Number.isInteger(parseInt(workNumber)) && currentIndex.length != 0) {
     initForm.style.display = 'none';
     canvas.style.display = 'block';
     menuscript.style.display = 'block';
-    getUrl('/api/imglists/' + workNumber)
+    console.log('currentIndex : ', currentIndex);
+    getUrl('/api/imglists/' + workNumber + '?currentIndex=' + currentIndex)
       .then((res) => res.json())
       .then(data => {
         console.log('Get list: ', data);
@@ -120,7 +122,7 @@ const getInitFrom = (form) => {
       });
   }
   else {
-    alert("Please type in valid working number!");
+    alert("Please type in valid working number and index!");
   }
 }
 

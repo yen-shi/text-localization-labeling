@@ -19,12 +19,16 @@ app.get('/', function(req, res) {
 // send images list
 app.get('/api/imglists/:number', function(req, res) {
   console.log('Get: ', req.params);
+  const currentIndex = req.query.currentIndex;
   if (!isNaN(parseInt(req.params.number))) {
     let cur_working_dir = 'cases/' + parseInt(req.params.number).toString();
     let target_dir = cur_working_dir+ '/';
     let cur_index_file = cur_working_dir + '.txt';
     let content = undefined
-    if (fs.existsSync(cur_index_file))
+    console.log('currentIndex : ', currentIndex);
+    if (currentIndex != 'last')
+      content = parseInt(currentIndex)
+    else if (fs.existsSync(cur_index_file))
       content = fs.readFileSync(cur_index_file, 'utf8');
     if (fs.existsSync(target_dir)) {
       fs.readdir(target_dir, (err, files) => {
