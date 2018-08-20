@@ -5,7 +5,8 @@ const http = require('http').Server(app);
 const bodyParser = require('body-parser')
 const readline = require('readline');
 
-const key = '/T0DSKCuhXPJIPXJH';
+const key = require('./config.js')
+console.log('key:', key)
 
 // parse application/json
 app.use(bodyParser.json());
