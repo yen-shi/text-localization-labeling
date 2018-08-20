@@ -8,6 +8,7 @@ let boxContent = document.getElementById("box-content");
 let context = canvas.getContext('2d');
 let boxHeight = 30;
 let workNumber = 0;
+let password = '';
 
 let boxes = []
 let labels = []
@@ -61,11 +62,11 @@ class fetchObj {
 }
 
 const getUrl = (url, data) => {
-  return fetch(url, new fetchObj('GET'));
+  return fetch(password+url, new fetchObj('GET'));
 }
 
 const putUrl = (url, data) => {
-  return fetch(url, new fetchObj('PUT', JSON.stringify(data)));
+  return fetch(password+url, new fetchObj('PUT', JSON.stringify(data)));
 }
 
 const getAndSet = (url) => {
@@ -77,7 +78,7 @@ const getAndSet = (url) => {
               boxes = res['boxes'];
               labels = res['labels'];
               initBoxLabels();
-              img.src=imgList[nowIdx];
+              img.src = password+'/'+imgList[nowIdx];
               showName.innerHTML = imgList[nowIdx];
               start();
            });
@@ -102,7 +103,9 @@ const initForm = document.getElementById('init-form');
 const menuscript = document.getElementById('menuscript');
 const getInitFrom = (form) => {
   workNumber = form.elements['work-number'].value;
+  password = '/' + form.elements['password'].value;
   let currentIndex = form.elements['current-index'].value;
+  console.log('password:', password);
   if (Number.isInteger(parseInt(workNumber)) && currentIndex.length != 0) {
     initForm.style.display = 'none';
     canvas.style.display = 'block';

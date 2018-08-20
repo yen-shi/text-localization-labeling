@@ -5,19 +5,25 @@ const http = require('http').Server(app);
 const bodyParser = require('body-parser')
 const readline = require('readline');
 
+const key = '/T0DSKCuhXPJIPXJH';
+
 // parse application/json
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use('/src', express.static(__dirname + '/src'));
-app.use('/cases', express.static(__dirname + '/cases'));
+app.use(key + '/cases', express.static(__dirname + '/cases'));
 
 app.get('/', function(req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 
+// app.get(key + '/fields', function(req, res) {
+//   res.sendFile(__dirname + '/fields.html');
+// });
+
 // send images list
-app.get('/api/imglists/:number', function(req, res) {
+app.get(key + '/api/imglists/:number', function(req, res) {
   console.log('Get: ', req.params);
   const currentIndex = req.query.currentIndex;
   if (!isNaN(parseInt(req.params.number))) {
@@ -54,7 +60,7 @@ app.get('/api/imglists/:number', function(req, res) {
 });
 
 // get image
-app.get('/api/imglabel', function(req, res) {
+app.get(key + '/api/imglabel', function(req, res) {
   const name = req.query.name;
   console.log('Get name: ', name);
   readLabel(name)
@@ -62,7 +68,7 @@ app.get('/api/imglabel', function(req, res) {
 });
 
 // put image
-app.put('/api/imglabel', function(req, res) {
+app.put(key + '/api/imglabel', function(req, res) {
   const { name, workNumber, current, boxes, labels } = req.body;
   console.log('Put name: ', name);
   writeLabel(name, workNumber, current, boxes, labels)
